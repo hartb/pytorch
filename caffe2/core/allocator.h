@@ -53,6 +53,15 @@ struct CAFFE2_API DefaultCPUAllocator final : at::Allocator {
   DefaultCPUAllocator() {}
   ~DefaultCPUAllocator() override {}
   at::DataPtr allocate(size_t nbytes) const override {
+    void* data = naked_allocate(nbytes);
+    if (FLAGS_caffe2_report_cpu_memory_usage) {
+      reporter_.New(data, nbytes);
+      return {data, data, &ReportAndDelete, at::Device(at::DeviceType::CPU)};
+    }
+    return {data, data, &Delete, at::Device(at::DeviceType::CPU)};
+  }
+
+  void *naked_allocate(size_t nbytes) const {
     void* data = nullptr;
 #ifdef __ANDROID__
     data = memalign(gCaffe2Alignment, nbytes);
@@ -73,11 +82,7 @@ struct CAFFE2_API DefaultCPUAllocator final : at::Allocator {
     } else if (FLAGS_caffe2_cpu_allocator_do_junk_fill) {
       memset_junk(data, nbytes);
     }
-    if (FLAGS_caffe2_report_cpu_memory_usage) {
-      reporter_.New(data, nbytes);
-      return {data, data, &ReportAndDelete, at::Device(at::DeviceType::CPU)};
-    }
-    return {data, data, &Delete, at::Device(at::DeviceType::CPU)};
+    return data;
   }
 
 #ifdef _MSC_VER

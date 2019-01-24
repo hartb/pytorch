@@ -357,14 +357,13 @@ struct CAFFE2_CUDA_API PinnedCPUAllocator final : public at::Allocator {
     at::DataPtr data_ptr;
     std::lock_guard<std::mutex> lock(CUDAContext::mutex());
     if (IsNUMAEnabled()) {
-      data_ptr = baseAllocator_.allocate(nbytes);
-      data = data_ptr.get();
+      data = baseAllocator_.naked_allocate(nbytes);
       CAFFE_ENFORCE(data);
       CUDA_ENFORCE(cudaHostRegister(data, nbytes, cudaHostRegisterDefault));
     } else {
       CUDA_ENFORCE(cudaMallocHost(&data, nbytes));
-      data_ptr = {data, data, &Delete, at::Device(CPU)};
     }
+    data_ptr = {data, data, &Delete, at::Device(CPU)};
     memset(data, 0, nbytes);
     return data_ptr;
   }
