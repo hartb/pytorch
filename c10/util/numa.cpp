@@ -134,7 +134,7 @@ void NUMAMove(void* ptr, size_t size, int numa_node_id) {
 }
 
 int GetCurrentNUMANode() {
-  VLOG(1) << "NUMA is not enabled";
+  // Because logging affects performance of tensor allocation benchmark, we'll remove VLOG here
   return -1;
 }
 
